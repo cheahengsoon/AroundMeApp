@@ -162,3 +162,5 @@ AroundMe.v11.suo
 AroundMe/obj/Debug/XapCacheFile.xml
 AroundMe/obj/Debug/XapCacheFile.xml
 AroundMe/obj/Debug/AroundMe.pdb
+AroundMe/obj/*.*
+AroundMe/Bin/*.*
