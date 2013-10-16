@@ -13,6 +13,7 @@ using Windows.Devices.Geolocation;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Windows.Media.Imaging;
+using System.Threading;
 
 namespace AroundMe
 {
@@ -24,16 +25,21 @@ namespace AroundMe
             InitializeComponent();
 
             Loaded += MainPage_Loaded;
-
-
-
             // Sample code to localize the ApplicationBar
             BuildLocalizedApplicationBar();
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
+            SystemTray.ProgressIndicator = new ProgressIndicator();
+
             UpdateMap();
+        }
+
+        public static void SetProgressIndicator(bool isVisible)
+        {
+            SystemTray.ProgressIndicator.IsIndeterminate = isVisible;
+            SystemTray.ProgressIndicator.IsVisible = isVisible;
         }
 
         private async void UpdateMap()
@@ -41,26 +47,51 @@ namespace AroundMe
             Geolocator geolocator = new Geolocator();
             geolocator.DesiredAccuracyInMeters = 50;
 
-            Geoposition position =
-                await geolocator.GetGeopositionAsync(
-                TimeSpan.FromMinutes(1),
-                TimeSpan.FromSeconds(30));
 
-            var gpsCoorCenter = 
-                new GeoCoordinate(
-                    position.Coordinate.Latitude,
-                    position.Coordinate.Longitude);
+            SetProgressIndicator(true);
+            SystemTray.ProgressIndicator.Text = "Getting GPS Position.";
 
-            AroundMeMap.Center = gpsCoorCenter;
-            AroundMeMap.ZoomLevel = 15;
+            try
+            {
+                Geoposition position =
+               await geolocator.GetGeopositionAsync(
+               TimeSpan.FromMinutes(1),
+               TimeSpan.FromSeconds(30));
 
-           
+                SystemTray.ProgressIndicator.Text = "Acquired.";
+
+                var gpsCoorCenter =
+                    new GeoCoordinate(
+                        position.Coordinate.Latitude,
+                        position.Coordinate.Longitude);
+
+                AroundMeMap.Center = gpsCoorCenter;
+                AroundMeMap.ZoomLevel = 15;
+
+                SetProgressIndicator(false);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MessageBox.Show("Location is disabled.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
 
 
- 
+
+
+            //SystemTray.ProgressIndicator = new ProgressIndicator();
+            SystemTray.ProgressIndicator.Text = "Acquired";
+
+            //Thread.Sleep(10000);
+
+
+
+            SystemTray.ProgressIndicator.IsVisible = true;
+            SystemTray.IsVisible = false;
         }
-
-
 
         // Sample code for building a localized ApplicationBar
         private void BuildLocalizedApplicationBar()
@@ -69,7 +100,7 @@ namespace AroundMe
             ApplicationBar = new ApplicationBar();
 
             // Create a new button and set the text value to the localized string from AppResources.
-            ApplicationBarIconButton appBarButton = 
+            ApplicationBarIconButton appBarButton =
                 new ApplicationBarIconButton(
                     new Uri("/Assets/feature.search.png", UriKind.Relative));
 
